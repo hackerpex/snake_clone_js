@@ -10,10 +10,7 @@
 * lives
 
 
-
-
 ![](demo.gif)
 
 ## demo
 
-![](index.html)
