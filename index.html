@@ -1,0 +1,411 @@
+
+
+ <span>
+    created by Rodrigo Camargo (hackerpex) in 16/12/2020 pode usar se creditar
+ </span>
+<a href='https://github.com/hackerpex/pong_clone_js'>github</a>
+
+<canvas id="gamecanvas" width="320" height="240">
+
+</canvas>
+<style>
+    canvas {
+        padding-left: 0;
+        padding-right: 0;
+        margin-left: auto;
+        margin-right: auto;
+        display: block;
+        width: 800px;
+    }
+</style>
+<script>
+
+//constants
+    MOUSE = 1;
+    KEYBOARD = 2;
+    JOYSTICK = 3;
+
+    EASY = 30;
+    MEDIUM = 50;
+    HARD = 70;
+    VERYHARD = 90;
+
+    LEFT = false;
+    RIGHT = false;
+    UP = false;
+    DOWN = false;
+
+    BOARD_HEIGTH = 200;
+    BOARD_WIDTH = 200;
+    BLOCK_SIZE = 10;
+
+
+    pause = false;
+
+
+
+    MAPMARGIN_LEFT = 100;
+    MAPMARGIN_TOP = 20;
+
+    
+
+
+    window.onload = function () {
+
+        setup();
+        gc = document.getElementById('gamecanvas');
+        canvas2d = gc.getContext('2d');
+
+        setInterval(update, 1000 / 4);
+
+
+
+
+
+
+        document.onkeydown = function (e) {
+
+            if (pause ) {
+                if (e.keyCode == 188) {
+                    decDificult();
+                }
+                if (e.keyCode == 190) {
+                    incDificult();
+                }
+            }
+            
+            if (e.keyCode == 13) {
+                pause = !pause;
+            }
+
+            if (counter <= 0 && control == KEYBOARD) {              
+                if (e.keyCode == 37) moveLeft();
+                if (e.keyCode == 38) moveUp();
+                if (e.keyCode == 39) moveRight();
+                if (e.keyCode == 40) moveDown();
+            }
+        }
+
+       
+
+
+
+        // coinFlip = getRandomInt(3, 0);
+        // console.log(coinFlip);
+        // if (coinFlip == 1) {
+        //     ball_speed_x = 1;
+        // }
+        // else {
+        //     ball_speed_x = -1;
+        // }
+
+        next();
+
+    }
+    function moveLeft(){
+        if(!RIGHT){
+            resetMove();
+            LEFT = true;
+        }
+    }
+    function moveRight(){
+        if(!LEFT){
+            resetMove();
+            RIGHT = true;
+        }
+    }
+    function moveUp(){
+        if(!DOWN){
+            resetMove();
+            UP = true;
+        }
+    }
+    function moveDown(){
+        if(!UP){
+            resetMove();
+            DOWN = true;
+        }
+    }
+    function resetMove(){
+        LEFT = false;
+        UP = false;
+        RIGHT = false;
+        DOWN = false;
+    }
+
+    function incDificult() {
+        switch (dificult) {
+            case EASY:
+                dificult = MEDIUM;
+                break;
+            case MEDIUM:
+                dificult = HARD;
+                break;
+            case HARD:
+                dificult = VERYHARD;
+                break;
+            default:
+            // code block
+        }
+
+    }
+    function decDificult() {
+        switch (dificult) {
+
+            case MEDIUM:
+                dificult = EASY;
+                break;
+            case HARD:
+                dificult = MEDIUM;
+                break;
+            case VERYHARD:
+                dificult = HARD;
+                break;
+
+            default:
+
+            // code block
+        }
+    }
+
+    function getDificultAlias() {
+        dificult_alias = '';
+
+        switch (dificult) {
+            case EASY:
+                dificult_alias = 'EASY';
+                break;
+            case MEDIUM:
+                dificult_alias = 'MEDIUM';
+                break;
+            case HARD:
+                dificult_alias = 'HARD';
+                break;
+            case VERYHARD:
+                dificult_alias = 'VERYHARD';
+                break;
+
+            default:
+                dificult_alias = 'x';
+            // code block
+        }
+
+        return dificult_alias;
+    }
+
+    function setup() {
+
+        control = KEYBOARD;
+        dificult = MEDIUM;
+        level = 1;
+        lives = 3;
+
+        snake_direction_x = snake_direction_y = 0;
+        snake_position_x = snake_position_y = 10 * BLOCK_SIZE;
+        snake_position_y = 0;
+        snake_position_y = 0;
+    
+
+
+        dificult_alias = '';
+
+
+        counter = 0;
+
+        tale = [];
+
+        tale_lenght = 3;
+
+       
+
+        player1_speed = 1;
+
+        putRandomFruit();
+
+
+    }
+
+    function putRandomFruit(){
+        fruit = {x:getRandomInt(19,0)*BLOCK_SIZE,y:getRandomInt(19,0)*BLOCK_SIZE};
+        valid = true;
+
+        for (var i = 0; i < tale.length ; i ++ ){
+            if(tale[i].x == fruit.x && tale[i].y == fruit.y){
+                valid = false;
+            }
+                
+        }
+        if(snake_position_x == fruit.x && snake_position_y == fruit.y){
+                valid = false;
+            }
+        if(!valid){
+            putRandomFruit();
+        }
+        
+    }
+
+    function move() {
+
+        snake_direction_x = 0;
+        snake_direction_y = 0;
+        if (LEFT ) {
+            snake_direction_x = -BLOCK_SIZE;
+        }
+        if (RIGHT ) {
+            snake_direction_x = BLOCK_SIZE;
+        }
+
+        if ( UP) {
+            snake_direction_y = -BLOCK_SIZE;
+        }
+        if ( DOWN) {
+            snake_direction_y = BLOCK_SIZE;
+        }
+
+      
+
+        snake_position_x += snake_direction_x;
+        snake_position_y += snake_direction_y;
+        
+        if (snake_position_x < 0) {
+            snake_position_x = BOARD_WIDTH - BLOCK_SIZE;
+        }
+        if (snake_position_x > BOARD_WIDTH ) {
+            snake_position_x = 0;
+        }
+        if (snake_position_y < 0) {
+            snake_position_y = BOARD_HEIGTH - BLOCK_SIZE;
+        }
+        if (snake_position_y > BOARD_HEIGTH) {
+            snake_position_y = 0;
+        }
+
+        
+
+    }
+
+    function next() {
+
+        snake_direction_x = 0;
+        snake_direction_y = 0;
+        
+        counter = 3;
+
+        setTimeout(function () {
+            counter = 2;
+            setTimeout(function () {
+                counter = 1;
+                setTimeout(function () {
+                    counter = 0;
+                    moveDown();
+                }, 1000);
+
+            }, 1000);
+
+        }, 1000);
+
+    }
+
+    function ai() {
+       
+    }
+    function eat(){
+        if(snake_position_x == fruit.x && snake_position_y == fruit.y){
+               tale_lenght += 1;
+               putRandomFruit(); 
+            }
+    }
+
+
+    function update() {
+        if (!pause ) {
+            
+
+            move();
+            eat();
+
+            ai();
+
+
+        }
+
+            canvas2d.fillStyle = 'black';
+            canvas2d.fillRect(0, 0, gc.width, gc.height);
+
+            canvas2d.fillStyle = 'white';
+
+            canvas2d.fillRect(MAPMARGIN_LEFT, MAPMARGIN_TOP, BOARD_WIDTH, BOARD_HEIGTH);
+
+
+            canvas2d.fillStyle = 'black';
+            
+            //snake
+            canvas2d.fillRect(MAPMARGIN_LEFT + snake_position_x, MAPMARGIN_TOP + snake_position_y, BLOCK_SIZE, BLOCK_SIZE);
+            
+            for (var i = 0; i < tale.length ; i ++ ){
+                console.log('x:',tale[i].x,'y:',tale[i].y);
+                canvas2d.fillRect(MAPMARGIN_LEFT + tale[i].x+1, MAPMARGIN_TOP + tale[i].y+1, BLOCK_SIZE-2, BLOCK_SIZE-2);
+            }
+
+
+
+            //fruit
+            canvas2d.fillRect(MAPMARGIN_LEFT + fruit.x, MAPMARGIN_TOP + fruit.y, BLOCK_SIZE, BLOCK_SIZE);
+
+
+            // canvas2d.font = "12px Monaco";
+
+            // canvas2d.fillText('PLAYER: ' + player1_score + ' X CPU: ' + player2_score, gc.width / 2 - 60, 12);
+
+            if (!pause ) {
+
+                if (counter > 0) {
+                    canvas2d.font = "24px Monaco";
+                    canvas2d.fillText(counter, MAPMARGIN_LEFT + (BOARD_WIDTH / 2 )-10 , gc.height / 2 - 6);
+                }
+
+
+                tale.push({x:snake_position_x, y:snake_position_y});
+                if( tale.length > tale_lenght){
+                    tale.shift();
+                }
+        
+            }
+
+             //config
+          
+
+
+        if (pause ) {
+
+
+       
+
+            canvas2d.font = "24px Monaco";
+
+            canvas2d.fillText('PAUSED', gc.width / 2 - 35, gc.height / 2 - 32);
+
+            // canvas2d.font = "8px Monaco";
+
+            // canvas2d.fillText('use < and > to change dificult', gc.width / 2 - 140, 20);
+
+
+        }
+
+        canvas2d.fillStyle = 'white';
+        canvas2d.font = "20px Monaco";
+             canvas2d.fillText('LEVEL', 20, 80);
+             canvas2d.fillText(level, 40, 110);
+
+
+    }
+</script>
+
+<script>
+
+    function getRandomInt(min, max) {
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+</script>
