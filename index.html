@@ -18,7 +18,11 @@
         width: 800px;
     }
 </style>
+<script src="sprites.js"></script>
+<script src="utils.js"></script>
 <script>
+
+//  console.log(sprite_heart); 
 
 //constants
     MOUSE = 1;
@@ -38,7 +42,8 @@
     BOARD_HEIGTH = 200;
     BOARD_WIDTH = 200;
     BLOCK_SIZE = 10;
-
+    TALE_START_SIZE = 10;
+    START_SPEED = 10;
 
     pause = false;
 
@@ -47,16 +52,21 @@
     MAPMARGIN_LEFT = 100;
     MAPMARGIN_TOP = 20;
 
+    loaded = false;
+    speed = START_SPEED; 
     
-
+    MAXTIME = 20;
 
     window.onload = function () {
 
-        setup();
+        
+
         gc = document.getElementById('gamecanvas');
         canvas2d = gc.getContext('2d');
 
-        setInterval(update, 1000 / 4);
+        loopInterval = setInterval(update, 1000 / speed);
+        
+        setInterval(timer, 1000);
 
 
 
@@ -86,7 +96,7 @@
             }
         }
 
-       
+        setupAndInit();
 
 
 
@@ -99,7 +109,13 @@
         //     ball_speed_x = -1;
         // }
 
-        next();
+       
+
+    }
+
+    function restartGameloop(){
+        clearInterval(loopInterval);
+        loopInterval = setInterval(update, 1000 / speed);
 
     }
     function moveLeft(){
@@ -193,12 +209,18 @@
         return dificult_alias;
     }
 
-    function setup() {
+    function setupAndInit() {
 
+        console.log('loadding...');
         control = KEYBOARD;
         dificult = MEDIUM;
         level = 1;
         lives = 3;
+        speed = START_SPEED;
+        score = 0;
+        time = MAXTIME;
+
+        topscore = localStorage.getItem('score') ?? 0;
 
         snake_direction_x = snake_direction_y = 0;
         snake_position_x = snake_position_y = 10 * BLOCK_SIZE;
@@ -214,18 +236,48 @@
 
         tale = [];
 
-        tale_lenght = 3;
+        tale_lenght = TALE_START_SIZE;
 
        
 
         player1_speed = 1;
 
         putRandomFruit();
+        som_andar = new Audio("res/sounds/andar.wav");
+        som_comer = new Audio("res/sounds/comer.wav");
+        som_bater = new Audio("res/sounds/bater.wav");
+        som_gameover = new Audio("res/sounds/gameover.wav");
+        // bop = new Audio("res/sounds/bop.wav");
+        som_andar.volume = 0.5;
+        som_comer.volume = 0.5;
+        som_bater.volume = 0.5;
+        som_gameover.volume = 0.5;
+        
+        // bop.volume = 0.2;
+
+       
+        setTimeout(function () {
+            console.log('sounds loaded.');
+            next();
+            loaded = true;
+         }, 1000);
+
+         restartGameloop();
 
 
     }
+    function timer(){
+        if(!pause && counter <=0){
+            time -= 1;
+            if(time <= 0){
+                dead();
+            }
+        }
+        
+    }
 
     function putRandomFruit(){
+        
         fruit = {x:getRandomInt(19,0)*BLOCK_SIZE,y:getRandomInt(19,0)*BLOCK_SIZE};
         valid = true;
 
@@ -241,10 +293,25 @@
         if(!valid){
             putRandomFruit();
         }
+        else{
+           
+            time = MAXTIME;
+            if(tale_lenght >  TALE_START_SIZE + level + 5){
+                level += 1;
+                speed += 1;
+                restartGameloop();
+                tale_lenght = TALE_START_SIZE + level;
+                next();
+            }
+        }
         
     }
 
     function move() {
+       
+      
+        som_andar.play();
+      
 
         snake_direction_x = 0;
         snake_direction_y = 0;
@@ -270,13 +337,13 @@
         if (snake_position_x < 0) {
             snake_position_x = BOARD_WIDTH - BLOCK_SIZE;
         }
-        if (snake_position_x > BOARD_WIDTH ) {
+        if (snake_position_x > BOARD_WIDTH - BLOCK_SIZE) {
             snake_position_x = 0;
         }
         if (snake_position_y < 0) {
             snake_position_y = BOARD_HEIGTH - BLOCK_SIZE;
         }
-        if (snake_position_y > BOARD_HEIGTH) {
+        if (snake_position_y > BOARD_HEIGTH - BLOCK_SIZE) {
             snake_position_y = 0;
         }
 
@@ -286,10 +353,13 @@
 
     function next() {
 
+        som_andar.playbackRate = 0.3 * speed;
+
         snake_direction_x = 0;
         snake_direction_y = 0;
         
         counter = 3;
+        time = MAXTIME;
 
         setTimeout(function () {
             counter = 2;
@@ -309,16 +379,54 @@
     function ai() {
        
     }
+
     function eat(){
         if(snake_position_x == fruit.x && snake_position_y == fruit.y){
+               som_comer.play();
                tale_lenght += 1;
+               score += 10 * (level * time);
                putRandomFruit(); 
+               
             }
+
+            for (var i = 0; i < tale.length ; i ++ ){
+               if(snake_position_x == tale[i].x && snake_position_y == tale[i].y){
+                    som_bater.play();
+                    dead();
+                }
+                
+               
+        }
+
+    }
+    function dead(){
+        lives -= 1;
+
+        if(lives <=0){
+            gameOver();
+        }
+
+        tale = [];
+        tale_lenght = TALE_START_SIZE;
+        next();
+
     }
 
+    function gameOver(){
+        som_gameover.play();        
+        if (score > topscore ){
+            localStorage.setItem('score',score);
+        }
+        
+        setupAndInit();
+    }
 
     function update() {
-        if (!pause ) {
+        if(!loaded){
+            return;
+        }
+
+        if (!pause && counter <=0) {
             
 
             move();
@@ -343,7 +451,7 @@
             canvas2d.fillRect(MAPMARGIN_LEFT + snake_position_x, MAPMARGIN_TOP + snake_position_y, BLOCK_SIZE, BLOCK_SIZE);
             
             for (var i = 0; i < tale.length ; i ++ ){
-                console.log('x:',tale[i].x,'y:',tale[i].y);
+                
                 canvas2d.fillRect(MAPMARGIN_LEFT + tale[i].x+1, MAPMARGIN_TOP + tale[i].y+1, BLOCK_SIZE-2, BLOCK_SIZE-2);
             }
 
@@ -360,8 +468,15 @@
             if (!pause ) {
 
                 if (counter > 0) {
+                    canvas2d.fillStyle = 'black';
+              
+                    canvas2d.fillRect(MAPMARGIN_LEFT + 50, MAPMARGIN_TOP + 60, 100, 30);
+                
+                    canvas2d.fillStyle = 'white';
                     canvas2d.font = "24px Monaco";
-                    canvas2d.fillText(counter, MAPMARGIN_LEFT + (BOARD_WIDTH / 2 )-10 , gc.height / 2 - 6);
+                    canvas2d.fillText(counter, MAPMARGIN_LEFT + 50 + 45, MAPMARGIN_TOP + 60 + 25);
+
+                    
                 }
 
 
@@ -381,9 +496,13 @@
 
        
 
+            canvas2d.fillStyle = 'black';
+              //snake
+            canvas2d.fillRect(MAPMARGIN_LEFT + 50, MAPMARGIN_TOP + 60, 100, 30);
+          
+            canvas2d.fillStyle = 'white';
             canvas2d.font = "24px Monaco";
-
-            canvas2d.fillText('PAUSED', gc.width / 2 - 35, gc.height / 2 - 32);
+            canvas2d.fillText('PAUSED', MAPMARGIN_LEFT + 50 + 5, MAPMARGIN_TOP + 60 + 25);
 
             // canvas2d.font = "8px Monaco";
 
@@ -397,7 +516,43 @@
              canvas2d.fillText('LEVEL', 20, 80);
              canvas2d.fillText(level, 40, 110);
 
+             canvas2d.fillText('TIME', 20, 140);
+             canvas2d.fillText(time, 40, 170);
 
+         //score
+            canvas2d.font = "12px Monaco";             
+            canvas2d.fillText('HISCORE:'+pad_with_zeroes(topscore,8), 10, 15);
+            canvas2d.fillText('SCORE:'+pad_with_zeroes(score,8), 200, 15);
+    
+
+        drawLives();
+
+    }
+
+    
+          
+
+    function drawLives(){
+        canvas2d.fillStyle = 'white';
+        
+        if(lives > 0){
+           drawPixelAt(10,20,sprite_heart,3);
+        }
+        if(lives > 1){
+           drawPixelAt(40,20,sprite_heart,3);
+        }
+        if(lives > 2){
+           drawPixelAt(70,20,sprite_heart,3);
+        }
+    }
+    function drawPixelAt(px,py,sprite,scale){
+        for( var i = 0; i < sprite.length; i++){
+                linha = Math.floor(i / 8);
+                coluna = i - linha * 8;
+                if(sprite[i] == 1){
+                    canvas2d.fillRect( (px + coluna * scale), py + (linha * scale), scale, scale);
+                } 
+            } 
     }
 </script>
 
