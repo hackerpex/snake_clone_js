@@ -6,5 +6,5 @@
 
 ## demo
 
-[jogar]:https://hackerpex.github.io/snake_clone_js/
+[jogar](https://hackerpex.github.io/snake_clone_js/)
 
